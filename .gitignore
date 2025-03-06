@@ -1,6 +1,4 @@
 data/
-logs/
-models/
 __pycache__/
 *.pth
 *.pt
