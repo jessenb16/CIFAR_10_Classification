@@ -73,7 +73,7 @@ class ResNet(nn.Module):
         out = self.linear(out)
         return out
 
-def Resnetv1():
+def ResNetTiny():
     return ResNet(BasicBlock, [1, 1, 1, 1])
 
 def ResNet18():
