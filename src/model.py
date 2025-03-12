@@ -103,7 +103,6 @@ def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 
-# Corrected model creator function (OUTSIDE the class)
 def create_model(blocks_per_layer, channels_per_layer, kernel_size=3, skip_kernel_size=1, pool_size=4, num_classes=10):
     return ResNet(BasicBlock, blocks_per_layer, channels_per_layer, kernel_size, skip_kernel_size, pool_size, num_classes)
     
@@ -127,7 +126,7 @@ if __name__ == "__main__":
         print(f"Output Shape: {y.shape}")  # Should be (1, num_classes)
 
         # Check number of parameters
-        num_params = model.count_parameters()
+        num_params = count_parameters(model)
         print(f"Number of Trainable Parameters: {num_params}")
     except Exception as e:
         print(f"Error: {e}")

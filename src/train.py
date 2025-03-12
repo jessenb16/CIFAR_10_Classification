@@ -87,7 +87,7 @@ def main(model, epochs, train_batch_size=128, test_batch_size=128, augmentations
     """
     
     # Count model parameters
-    total_params = model.count_parameters()
+    total_params = count_parameters(model)
     print(f'Total model parameters: {total_params}')
     if total_params > 5_000_000:
         raise ValueError('Model cannot have more than 5 million parameters')
@@ -190,5 +190,5 @@ if __name__ == "__main__":
 
     main(model, epochs=5, train_batch_size=128, test_batch_size=128, augmentations=None, optimizer=None, scheduler=None, smoothing=0.0, learning_rate=0.01, num_workers=2, resume=False)
 
-    
+
 
