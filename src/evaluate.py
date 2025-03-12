@@ -53,14 +53,14 @@ def load_model(file, device):
     return model
 
 def save_predictions(predictions, file):
-    # Ensure saved_predictions directory exist
-    os.makedirs(SAVED_MODELS_PATH, exist_ok=True)
+    # Ensure saved_predictions directory exists
+    os.makedirs(SAVED_PREDICTIONS_PATH, exist_ok=True)
 
     # Save predictions to CSV in saved_predictions directory
-    filename = filename.replace('.pth', '.csv')
+    output_filename = file.replace('.pth', '.csv')
     df = pd.DataFrame({'ID': range(len(predictions)), 'Label': predictions})
-    df.to_csv(f'{SAVED_PREDICTIONS_PATH}/{filename}', index=False)
-    print(f'Predictions saved as {filename}')
+    df.to_csv(f'{SAVED_PREDICTIONS_PATH}/{output_filename}', index=False)
+    print(f'Predictions saved as {output_filename}')
 
 def evaluate(model, testloader, device, batch_size=100):
     model.eval()
@@ -116,11 +116,11 @@ if __name__ == '__main__':
         print(f'ERROR: {e}')
 
 
-        
 
 
 
-    
+
+
 
 
 
