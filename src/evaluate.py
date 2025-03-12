@@ -30,10 +30,10 @@ def load_hidden_test():
     ])
 
     # Reshape from (N, H, W, C) → (N, C, H, W) for PyTorch
-    test_images = test_images.reshape(-1, 32, 32, 3).astype(np.uint8)  # Ensure correct shape and data type
+    images = images.reshape(-1, 32, 32, 3).astype(np.uint8)  # Ensure correct shape and data type
 
     # Convert to PyTorch tensor
-    test_images = torch.stack([test_transform(img) for img in test_images])
+    test_images = torch.stack([test_transform(img) for img in images])
 
     return test_images
 

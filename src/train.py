@@ -179,6 +179,7 @@ def main(model, epochs, train_batch_size=128, test_batch_size=128, augmentations
 
         scheduler.step() if scheduler else None
         print(f'Learning rate: {optimizer.param_groups[0]["lr"]:.6f}')
+        print()
 
     print('Training complete')
     print(f'Best test accuracy: {best_accuracy:.2f}% at epoch {best_epoch}')
