@@ -65,7 +65,6 @@ class ResNet(nn.Module):
         assert len(blocks_per_layer) == len(channels_per_layer), "blocks_per_layer and channels_per_layer must have the same length"
 
         self.in_channels = channels_per_layer[0]
-        self.pool_size = pool_size
         
         # Initial Convolutional Layer
         self.conv1 = nn.Conv2d(3, self.in_channels, kernel_size=kernel_size, stride=1, padding=kernel_size // 2, bias=False)
@@ -75,7 +74,11 @@ class ResNet(nn.Module):
         self.residual_layers = self._make_layers(block, blocks_per_layer, channels_per_layer, kernel_size, skip_kernel_size)
 
         # Output Layer
-        self.fc = nn.Linear(channels_per_layer[-1], num_classes)
+        self.output_layer = nn.Sequential(
+            nn.AdaptiveAvgPool2d((pool_size, pool_size)),
+            nn.Flatten(),
+            nn.Linear(channels_per_layer[-1] * pool_size * pool_size, num_classes)
+        )
 
     # Creates a single residual layer
     def _make_layer(self, block, out_channels, num_blocks, kernel_size, skip_kernel_size, stride=1):
@@ -95,9 +98,8 @@ class ResNet(nn.Module):
     def forward(self, x):
         x = F.relu(self.bn1(self.conv1(x)))  # Initial Conv Layer
         x = self.residual_layers(x)  # Residual layers
-        x = F.avg_pool2d(x, self.pool_size)  # Adaptive Pooling
-        x = x.view(x.size(0), -1)  # Flatten
-        return self.fc(x)  # Fully Connected Layer
+        x = self.output_layer(x)  # Output Layer
+        return x
     
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
@@ -117,7 +119,7 @@ if __name__ == "__main__":
             channels_per_layer=[64, 128, 256, 512],  # Standard ResNet filters
             kernel_size=3,                       # Standard 3x3 convs
             skip_kernel_size=1,                  # 1x1 convs for skip connections
-            pool_size=1,                         # Global average pooling
+            pool_size=4,                         # Global average pooling
         )
 
         # Check output shape

@@ -92,19 +92,18 @@ def main(model, epochs, train_batch_size=128, test_batch_size=128, augmentations
     if total_params > 5_000_000:
         raise ValueError('Model cannot have more than 5 million parameters')
 
-
     # Set device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    print(f'Device: {device}')
-
+    
     # Load data
-    trainloader, testloader = create_cifar10_dataloaders(train_batch_size, test_batch_size,
-                                                          augmentations=augmentations, num_workers=num_workers)
-    print(f'Train Batches: {len(trainloader)} | Test Batches: {len(testloader)}')
+    trainloader, testloader = create_cifar10_dataloaders(
+        train_batch_size=train_batch_size, 
+        test_batch_size=test_batch_size,
+        augmentations=augmentations,
+        num_workers=num_workers)
 
     csv_file = os.path.join(SAVED_DATA_PATH, 'training_log.csv')
     checkpoint_file = os.path.join(SAVED_MODELS_PATH, 'checkpoint.pth')
-    print(f'CSV File: {csv_file} | Checkpoint File: {checkpoint_file}')
 
     start_epoch = 1
     # Resume training if specified
