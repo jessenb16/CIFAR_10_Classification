@@ -63,7 +63,7 @@ def test(model, testloader, loss_func, device):
     test_loss /= total 
     accuracy = 100 * correct / total  # Compute accuracy
 
-    print(f'TEST: Loss: {test_loss:.4f} | Accuracy: {accuracy:.2f}% ({correct}/{total})')
+    print(f'Test Loss: {test_loss:.4f} | Accuracy: {accuracy:.2f}% ({correct}/{total})')
 
     return test_loss, accuracy  
 
@@ -121,7 +121,6 @@ def main(model, epochs, train_batch_size=128, test_batch_size=128, augmentations
     # Initialize model
     print('Initializing model...')
     model = model.to(device)
-    print(count_parameters(model))
 
     # Define loss function
     if smoothing > 0:
