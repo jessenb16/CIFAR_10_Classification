@@ -95,13 +95,16 @@ def main(model, epochs, train_batch_size=128, test_batch_size=128, augmentations
 
     # Set device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print(f'Device: {device}')
 
     # Load data
     trainloader, testloader = create_cifar10_dataloaders(train_batch_size, test_batch_size,
                                                           augmentations=augmentations, num_workers=num_workers)
+    print(f'Train Batches: {len(trainloader)} | Test Batches: {len(testloader)}')
 
     csv_file = os.path.join(SAVED_DATA_PATH, 'training_log.csv')
     checkpoint_file = os.path.join(SAVED_MODELS_PATH, 'checkpoint.pth')
+    print(f'CSV File: {csv_file} | Checkpoint File: {checkpoint_file}')
 
     start_epoch = 1
     # Resume training if specified
@@ -119,6 +122,7 @@ def main(model, epochs, train_batch_size=128, test_batch_size=128, augmentations
     # Initialize model
     print('Initializing model...')
     model = model.to(device)
+    print(count_parameters(model))
 
     # Define loss function
     if smoothing > 0:
@@ -132,10 +136,12 @@ def main(model, epochs, train_batch_size=128, test_batch_size=128, augmentations
 
     # Define optimizer
     optimizer = optimizer if optimizer else optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9, weight_decay=5e-4)
+    print(optimizer)
 
     # Ensure scheduler is valid
     if scheduler and not isinstance(scheduler, optim.lr_scheduler.LRScheduler):
         raise TypeError('Scheduler must be an instance of torch.optim.lr_scheduler.LRScheduler')
+    print(scheduler)
     
 
     # Train model for multiple epochs
