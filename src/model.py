@@ -99,8 +99,8 @@ class ResNet(nn.Module):
         x = x.view(x.size(0), -1)  # Flatten
         return self.fc(x)  # Fully Connected Layer
     
-    def count_parameters(self):
-        return sum(p.numel() for p in self.parameters() if p.requires_grad)
+def count_parameters(model):
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 
 # Corrected model creator function (OUTSIDE the class)

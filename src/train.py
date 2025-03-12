@@ -179,3 +179,16 @@ def main(model, epochs, train_batch_size=128, test_batch_size=128, augmentations
     print('Training complete')
     print(f'Best test accuracy: {best_accuracy:.2f}% at epoch {best_epoch}')
 
+if __name__ == "__main__":
+    model = create_model(
+        blocks_per_layer=[2, 2, 2, 2],       # ResNet-18 style
+        channels_per_layer=[64, 128, 256, 512],  # Standard ResNet filters
+        kernel_size=3,                       # Standard 3x3 convs
+        skip_kernel_size=1,                  # 1x1 convs for skip connections
+        pool_size=1,                         # Global average pooling
+    )
+
+    main(model, epochs=5, train_batch_size=128, test_batch_size=128, augmentations=None, optimizer=None, scheduler=None, smoothing=0.0, learning_rate=0.01, num_workers=2, resume=False)
+
+    
+
