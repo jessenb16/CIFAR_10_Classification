@@ -4,11 +4,54 @@ import torch.nn as nn
 import os
 import torch
 import pandas as pd
+import csv
 from src.dataset import create_cifar10_dataloaders
 from src.model import *
 from src.utils import get_paths
 
 _, SAVED_MODELS_PATH, _, SAVED_DATA_PATH = get_paths()
+
+def save_performance(epoch, train_accuracy, test_accuracy, train_loss, test_loss, lr, model_name):
+    """Save training performance metrics to CSV file"""
+    os.makedirs(SAVED_DATA_PATH, exist_ok=True)
+    csv_file = os.path.join(SAVED_DATA_PATH, f'{model_name}_training_history.csv')
+    file_exists = os.path.isfile(csv_file)
+    
+    with open(csv_file, mode='a', newline='') as f:
+        writer = csv.writer(f)
+        # Write header only if file did not exist
+        if not file_exists:
+            writer.writerow(['epoch', 'train_accuracy', 'test_accuracy', 'train_loss', 'test_loss', 'learning_rate'])
+        writer.writerow([epoch, train_accuracy, test_accuracy, train_loss, test_loss, lr])
+
+def save_model(model, epoch, accuracy, optimizer=None, scheduler=None):
+    """Save model with informative filename"""
+    os.makedirs(SAVED_MODELS_PATH, exist_ok=True)
+    
+    # Get model name or use default
+    model_name = getattr(model, 'name', type(model).__name__)
+    accuracy_str = f"{accuracy:.2f}".replace('.', '_')
+    filename = f'{model_name}_epoch{epoch}_acc{accuracy_str}.pth'
+    filepath = os.path.join(SAVED_MODELS_PATH, filename)
+    
+    # Save both complete model and state dict
+    checkpoint = {
+        'model': model,                      # Complete model (for easy loading)
+        'model_state_dict': model.state_dict(),  # State dict (for flexibility)
+        'epoch': epoch,
+        'accuracy': accuracy
+    }
+    
+    # Add optimizer and scheduler if provided
+    if optimizer:
+        checkpoint['optimizer_state_dict'] = optimizer.state_dict()
+    if scheduler:
+        checkpoint['scheduler_state_dict'] = scheduler.state_dict()
+        
+    torch.save(checkpoint, filepath)
+    print(f'Model checkpoint saved as {filename}')
+    
+    return filename
 
 
 def train(model, trainloader, loss_func, optimizer, device):
@@ -145,6 +188,8 @@ def main(model, epochs, train_batch_size=128, test_batch_size=128, augmentations
     # Train model for multiple epochs
     print('Training model...')
     best_accuracy, best_epoch = 0.0, 0
+    best_model_file = None
+
     for epoch in range(start_epoch, epochs + 1):
         print(f'Epoch: {epoch}')
         train_loss, train_accuracy = train(model, trainloader, loss_func, optimizer, device)
@@ -153,36 +198,32 @@ def main(model, epochs, train_batch_size=128, test_batch_size=128, augmentations
         # Save the model if test accuracy improves
         if test_accuracy > best_accuracy:
             print("Saving checkpoint...")
-            state = {
-                'epoch': epoch,
-                'model_state_dict': model.state_dict(),
-                'test_accuracy': test_accuracy,
-            }
-            torch.save(state, checkpoint_file)
+            # Use the new save_model function
+            best_model_file = save_model(model, epoch, test_accuracy, optimizer, scheduler)
             best_accuracy = test_accuracy
             best_epoch = epoch
 
-        # Save training log
-        df_data = pd.DataFrame([{
-            'epoch': epoch,
-            'train_loss': train_loss,
-            'train_accuracy': train_accuracy,
-            'test_loss': test_loss,
-            'test_accuracy': test_accuracy,
-            'learning_rate': optimizer.param_groups[0]['lr'],
-        }])
+        # Save performance metrics
+        model_name = getattr(model, 'name', type(model).__name__)
+        save_performance(
+            epoch, 
+            train_accuracy, 
+            test_accuracy, 
+            train_loss, 
+            test_loss,
+            optimizer.param_groups[0]['lr'],
+            model_name
+        )
 
-        if os.path.isfile(csv_file):
-            df_data.to_csv(csv_file, mode='a', header=False, index=False)
-        else:
-            df_data.to_csv(csv_file, mode='w', header=True, index=False)
-
+        # Apply scheduler if provided
         scheduler.step() if scheduler else None
         print(f'Learning rate: {optimizer.param_groups[0]["lr"]:.6f}')
         print()
 
     print('Training complete')
     print(f'Best test accuracy: {best_accuracy:.2f}% at epoch {best_epoch}')
+    if best_model_file:
+        print(f'Best model saved as: {best_model_file}')
 
 if __name__ == "__main__":
     model = create_model(
@@ -194,6 +235,5 @@ if __name__ == "__main__":
     )
 
     main(model, epochs=5, train_batch_size=128, test_batch_size=128, augmentations=None, optimizer=None, scheduler=None, smoothing=0.0, learning_rate=0.01, num_workers=2, resume=False)
-
 
 

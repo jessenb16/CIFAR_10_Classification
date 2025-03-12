@@ -45,11 +45,28 @@ def load_model(file, device):
     if not os.path.exists(f'{SAVED_MODELS_PATH}/{file}'):
         raise FileNotFoundError(f'{file} not found in {SAVED_MODELS_PATH}')
     
-    # Load the model
+    # Load the checkpoint
     print(f'Loading model from {SAVED_MODELS_PATH}/{file}')
-    model = torch.load(f'{SAVED_MODELS_PATH}/{file}', map_location=device, weights_only=False)
+    checkpoint = torch.load(f'{SAVED_MODELS_PATH}/{file}', map_location=device)
+    
+    # Extract model from checkpoint
+    if isinstance(checkpoint, dict):
+        if 'model' in checkpoint:
+            # New format - complete model is stored
+            model = checkpoint['model']
+            print(f"Loaded model from checkpoint (epoch {checkpoint.get('epoch', 'unknown')}, "
+                  f"accuracy {checkpoint.get('accuracy', 'unknown')}%)")
+        else:
+            # Old format or unexpected format
+            raise ValueError(f"Expected 'model' key in checkpoint, found: {list(checkpoint.keys())}")
+    else:
+        # Direct model object
+        model = checkpoint
+        print("Loaded model (direct model format)")
+    
     model.to(device)
-
+    model.eval()  # Set to evaluation mode for inference
+    
     return model
 
 def save_predictions(predictions, file):
