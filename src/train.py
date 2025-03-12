@@ -112,7 +112,7 @@ def test(model, testloader, loss_func, device):
 
 
 def main(model, epochs, train_batch_size=128, test_batch_size=128, augmentations=None,
-         optimizer=None, scheduler=None, smoothing=0.0, learning_rate=0.01, num_workers=2, resume=False):
+         optimizer=None, scheduler=None, smoothing=0.0, learning_rate=0.1, num_workers=2, resume=False):
     """
     Main function to train and test the model.
     Args:
