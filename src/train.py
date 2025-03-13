@@ -10,6 +10,7 @@ from src.model import *
 from src.utils import get_paths, find_best_checkpoint, is_kaggle
 import glob
 import heapq
+import torchvision.transforms.v2 as v2
 
 _, SAVED_MODELS_PATH, _, SAVED_DATA_PATH = get_paths()
 
@@ -83,12 +84,23 @@ def save_model(model, epoch, accuracy, optimizer=None, scheduler=None, max_to_ke
     return filename
 
 
-def train(model, trainloader, loss_func, optimizer, device):
+def train(model, trainloader, loss_func, optimizer, device, cutmix_mixup=False):
     model.train()  # Set model to training mode
     train_loss, correct, total = 0, 0, 0
 
+    # Setup CutMix/MixUp transforms if enabled
+    cutmix_or_mixup = None
+    if cutmix_mixup:
+        cutmix = v2.CutMix(num_classes=10)
+        mixup = v2.MixUp(num_classes=10)
+        cutmix_or_mixup = v2.RandomChoice([cutmix, mixup])
+
     for batch_idx, (images, labels) in enumerate(trainloader):
         images, labels = images.to(device), labels.to(device)
+
+        # Apply CutMix/MixUp if enabled
+        if cutmix_mixup:
+            images, labels = cutmix_or_mixup(images, labels)
 
         optimizer.zero_grad()   # Reset gradients
 
@@ -100,8 +112,9 @@ def train(model, trainloader, loss_func, optimizer, device):
 
         train_loss += loss.item() * images.size(0)  # Accumulate total loss (scaled by batch size)
 
+        # Calculate accuracy - handle one-hot labels from CutMix/MixUp
         _, predicted = outputs.max(1)
-        correct += (predicted == labels).sum().item()
+        correct += (predicted == labels.argmax(dim=1)).sum().item() if cutmix_mixup else (predicted == labels).sum().item()
         total += labels.size(0)
 
     # Compute true average loss and accuracy for the epoch
@@ -111,7 +124,6 @@ def train(model, trainloader, loss_func, optimizer, device):
     # Print final loss and accuracy for the epoch
     print(f'Train Loss: {train_loss:.3f} | Train Acc: {accuracy:.2f}% ({correct}/{total})')
 
-    
     return train_loss, accuracy
 
 def test(model, testloader, loss_func, device):
@@ -141,7 +153,8 @@ def test(model, testloader, loss_func, device):
 
 
 def main(model, epochs, train_batch_size=128, test_batch_size=128, augmentations=None,
-         optimizer=None, scheduler=None, smoothing=0.0, learning_rate=0.1, num_workers=2, resume=False):
+         optimizer=None, scheduler=None, smoothing=0.0, learning_rate=0.1, num_workers=2, 
+         resume=False, cutmix_mixup=False):
     """
     Main function to train and test the model.
     Args:
@@ -156,6 +169,7 @@ def main(model, epochs, train_batch_size=128, test_batch_size=128, augmentations
         learning_rate (float): Learning rate for the optimizer.
         num_workers (int): Number of workers for data loading.
         resume (bool): Whether to resume from a checkpoint.
+        cutmix_mixup (bool): Whether to use CutMix/MixUp augmentation.
     """
     
     # Count model parameters
@@ -280,7 +294,7 @@ def main(model, epochs, train_batch_size=128, test_batch_size=128, augmentations
 
     for epoch in range(start_epoch, start_epoch + epochs + 1):
         print(f'Epoch: {epoch}')
-        train_loss, train_accuracy = train(model, trainloader, loss_func, optimizer, device)
+        train_loss, train_accuracy = train(model, trainloader, loss_func, optimizer, device, cutmix_mixup)
         test_loss, test_accuracy = test(model, testloader, loss_func, device)
 
         # Save the model if test accuracy improves
