@@ -36,7 +36,7 @@ class BasicBlock(nn.Module):
         if stride != 1 or in_channels != out_channels:
             self.shortcut = nn.Sequential(
                 nn.Conv2d(in_channels, out_channels, kernel_size=skip_kernel_size, stride=stride, 
-                          padding=(skip_kernel_size - 1) // 2, bias=False), 
+                          padding=skip_kernel_size  // 2, bias=False), 
                 nn.BatchNorm2d(out_channels)
             )
 
@@ -63,7 +63,7 @@ class ResNet(nn.Module):
         super(ResNet, self).__init__()
 
         assert len(blocks_per_layer) == len(channels_per_layer), "blocks_per_layer and channels_per_layer must have the same length"
-
+        self.pool_size = pool_size
         self.in_channels = channels_per_layer[0]
         
         # Initial Convolutional Layer
@@ -74,17 +74,14 @@ class ResNet(nn.Module):
         self.residual_layers = self._make_layers(block, blocks_per_layer, channels_per_layer, kernel_size, skip_kernel_size)
 
         # Output Layer
-        self.output_layer = nn.Sequential(
-            nn.AdaptiveAvgPool2d((pool_size, pool_size)),
-            nn.Flatten(),
-            nn.Linear(channels_per_layer[-1] * pool_size * pool_size, num_classes)
-        )
+        self.linear = nn.Linear(channels_per_layer[-1], num_classes)
 
     # Creates a single residual layer
     def _make_layer(self, block, out_channels, num_blocks, kernel_size, skip_kernel_size, stride=1):
+        strides = [stride] + [1]*(num_blocks-1)
         layers = []
-        for i in range(num_blocks):
-            layers.append(block(self.in_channels, out_channels, kernel_size, skip_kernel_size, stride if i == 0 else 1))
+        for stride in strides:
+            layers.append(block(self.in_channels, out_channels, kernel_size, skip_kernel_size, stride))
             self.in_channels = out_channels
         return nn.Sequential(*layers)
     
@@ -96,10 +93,12 @@ class ResNet(nn.Module):
         return nn.Sequential(*layers)
     
     def forward(self, x):
-        x = F.relu(self.bn1(self.conv1(x)))  # Initial Conv Layer
-        x = self.residual_layers(x)  # Residual layers
-        x = self.output_layer(x)  # Output Layer
-        return x
+        out = F.relu(self.bn1(self.conv1(x)))  # Initial Conv Layer
+        out = self.residual_layers(out)  # Residual layers
+        out = F.avg_pool2d(out, self.pool_size)
+        out = out.view(out.size(0), -1)
+        out = self.linear(out)
+        return out
     
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)

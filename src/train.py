@@ -291,7 +291,7 @@ def main(model, epochs, train_batch_size=128, test_batch_size=128, augmentations
         best_accuracy, best_epoch = 0.0, 0
     else:
         best_epoch = start_epoch - 1  # Use the epoch from loaded checkpoint
-
+        
     for epoch in range(start_epoch, start_epoch + epochs + 1):
         print(f'Epoch: {epoch}')
         train_loss, train_accuracy = train(model, trainloader, loss_func, optimizer, device, cutmix_mixup)
