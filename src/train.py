@@ -7,9 +7,35 @@ import pandas as pd
 import csv
 from src.dataset import create_cifar10_dataloaders
 from src.model import *
-from src.utils import get_paths
+from src.utils import get_paths, find_best_checkpoint, is_kaggle
+import glob
+import heapq
 
 _, SAVED_MODELS_PATH, _, SAVED_DATA_PATH = get_paths()
+
+# Global list to track the best checkpoints (min heap of tuples: (accuracy, filename))
+best_checkpoints = []
+
+def manage_checkpoints(new_checkpoint, max_to_keep=5):
+    """
+    Manages the best checkpoints, keeping only the top 'max_to_keep'.
+    
+    Args:
+        new_checkpoint: Tuple of (accuracy, filename)
+        max_to_keep: Maximum number of checkpoints to keep
+    """
+    global best_checkpoints
+    
+    # Add new checkpoint to our tracking list
+    heapq.heappush(best_checkpoints, new_checkpoint)
+    
+    # If we have more than max_to_keep, remove the worst one(s)
+    while len(best_checkpoints) > max_to_keep:
+        accuracy, filename = heapq.heappop(best_checkpoints)  # Remove worst checkpoint
+        filepath = os.path.join(SAVED_MODELS_PATH, filename)
+        if os.path.exists(filepath):
+            os.remove(filepath)
+            print(f"Removed checkpoint {filename} with accuracy {accuracy:.2f}%")
 
 def save_performance(epoch, train_accuracy, test_accuracy, train_loss, test_loss, lr, model_name):
     """Save training performance metrics to CSV file"""
@@ -24,8 +50,8 @@ def save_performance(epoch, train_accuracy, test_accuracy, train_loss, test_loss
             writer.writerow(['epoch', 'train_accuracy', 'test_accuracy', 'train_loss', 'test_loss', 'learning_rate'])
         writer.writerow([epoch, train_accuracy, test_accuracy, train_loss, test_loss, lr])
 
-def save_model(model, epoch, accuracy, optimizer=None, scheduler=None):
-    """Save model with informative filename"""
+def save_model(model, epoch, accuracy, optimizer=None, scheduler=None, max_to_keep=5):
+    """Save model with informative filename and manage checkpoint retention"""
     os.makedirs(SAVED_MODELS_PATH, exist_ok=True)
     
     # Get model name or use default
@@ -36,8 +62,8 @@ def save_model(model, epoch, accuracy, optimizer=None, scheduler=None):
     
     # Save both complete model and state dict
     checkpoint = {
-        'model': model,                      # Complete model (for easy loading)
-        'model_state_dict': model.state_dict(),  # State dict (for flexibility)
+        'model': model,
+        'model_state_dict': model.state_dict(),
         'epoch': epoch,
         'accuracy': accuracy
     }
@@ -50,6 +76,9 @@ def save_model(model, epoch, accuracy, optimizer=None, scheduler=None):
         
     torch.save(checkpoint, filepath)
     print(f'Model checkpoint saved as {filename}')
+    
+    # Manage checkpoints - keep only the best max_to_keep
+    manage_checkpoints((accuracy, filename), max_to_keep)
     
     return filename
 
@@ -149,17 +178,74 @@ def main(model, epochs, train_batch_size=128, test_batch_size=128, augmentations
     checkpoint_file = os.path.join(SAVED_MODELS_PATH, 'checkpoint.pth')
 
     start_epoch = 1
+    best_accuracy = 0.0
+
     # Resume training if specified
     if resume:
-        if os.path.isfile(checkpoint_file):
-            print(f"Loading checkpoint '{checkpoint_file}'")
-            checkpoint = torch.load(checkpoint_file)
-            model.load_state_dict(checkpoint['model_state_dict'])
-            start_epoch = checkpoint['epoch'] + 1
-            best_accuracy = checkpoint['test_accuracy']
+        # For Kaggle, also check the dataset inputs
+        kaggle_input_path = '/kaggle/input' if is_kaggle() else None
+        best_checkpoint_path, is_kaggle_checkpoint = find_best_checkpoint(SAVED_MODELS_PATH, kaggle_input_path)
+        
+        if best_checkpoint_path:
+            print(f"Loading checkpoint: {os.path.basename(best_checkpoint_path)}")
+            checkpoint = torch.load(best_checkpoint_path, map_location=device)
+            
+            # Load model state
+            if 'model' in checkpoint:
+                # Full model saved
+                model = checkpoint['model'].to(device)
+            elif 'model_state_dict' in checkpoint:
+                # Only state dict saved
+                model.load_state_dict(checkpoint['model_state_dict'])
+            
+            # Get training info
+            start_epoch = checkpoint.get('epoch', 0) + 1
+            best_accuracy = checkpoint.get('accuracy', 0.0)
+            
+            # Check if optimizer needs to be loaded
+            if optimizer is None:
+                # Create default optimizer if None provided
+                optimizer = optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9, weight_decay=5e-4)
+                # Try to load optimizer state if available
+                if 'optimizer_state_dict' in checkpoint:
+                    try:
+                        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+                        print("Loaded optimizer state from checkpoint")
+                    except:
+                        print("Warning: Could not load optimizer state - using fresh optimizer")
+            else:
+                # Custom optimizer provided - don't load state
+                print("Using new optimizer - ignoring saved optimizer state")
+                
+            # Check if scheduler needs to be loaded
+            if scheduler is None:
+                # Create default scheduler if None provided
+                if 'scheduler_state_dict' in checkpoint:
+                    # Try to recreate scheduler type from checkpoint
+                    try:
+                        scheduler_type = checkpoint.get('scheduler_type', 'StepLR')
+                        if scheduler_type == 'StepLR':
+                            scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=30, gamma=0.1)
+                        # Add other scheduler types as needed
+                        
+                        # Load scheduler state
+                        scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+                        print("Loaded scheduler state from checkpoint")
+                    except:
+                        print("Warning: Could not recreate scheduler - using default")
+            else:
+                # Custom scheduler provided - don't load state
+                print("Using new scheduler - ignoring saved scheduler state")
+                
+            # Initialize best_checkpoints tracking list with this checkpoint
+            if not is_kaggle_checkpoint:  # Only track local checkpoints
+                global best_checkpoints
+                filename = os.path.basename(best_checkpoint_path)
+                best_checkpoints = [(best_accuracy, filename)]
+                
+            print(f"Resumed from epoch {start_epoch-1} with accuracy {best_accuracy:.2f}% with learning rate {optimizer.param_groups[0]['lr']:.6f}")
         else:
-            print(f"No checkpoint found at '{checkpoint_file}'")
-            start_epoch = 1
+            print("No checkpoint found - starting from scratch")
     
     # Initialize model
     print('Initializing model...')
