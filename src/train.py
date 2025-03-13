@@ -177,7 +177,7 @@ def main(model, epochs, train_batch_size=128, test_batch_size=128, augmentations
     csv_file = os.path.join(SAVED_DATA_PATH, 'training_log.csv')
     checkpoint_file = os.path.join(SAVED_MODELS_PATH, 'checkpoint.pth')
 
-    start_epoch = 1
+    start_epoch = 0
     best_accuracy = 0.0
 
     # Resume training if specified
@@ -273,10 +273,12 @@ def main(model, epochs, train_batch_size=128, test_batch_size=128, augmentations
 
     # Train model for multiple epochs
     print('Training model...')
-    best_accuracy, best_epoch = 0.0, 0
-    best_model_file = None
+    if not resume:
+        best_accuracy, best_epoch = 0.0, 0
+    else:
+        best_epoch = start_epoch - 1  # Use the epoch from loaded checkpoint
 
-    for epoch in range(start_epoch, epochs + 1):
+    for epoch in range(start_epoch, start_epoch + epochs + 1):
         print(f'Epoch: {epoch}')
         train_loss, train_accuracy = train(model, trainloader, loss_func, optimizer, device)
         test_loss, test_accuracy = test(model, testloader, loss_func, device)
