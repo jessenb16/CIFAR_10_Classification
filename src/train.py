@@ -183,7 +183,7 @@ def main(model, epochs, train_batch_size=128, test_batch_size=128, augmentations
     # Resume training if specified
     if resume:
         # For Kaggle, also check the dataset inputs
-        kaggle_input_path = '/kaggle/input' if is_kaggle() else None
+        kaggle_input_path = '/kaggle/input/cifar10-model-checkpoints' if is_kaggle() else None
         best_checkpoint_path, is_kaggle_checkpoint = find_best_checkpoint(SAVED_MODELS_PATH, kaggle_input_path)
         
         if best_checkpoint_path:
