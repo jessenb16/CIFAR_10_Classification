@@ -1,0 +1,38 @@
+#Choose model parameters
+BLOCKS_PER_LAYER = [3,3,4]
+CHANNELS_PER_LAYER = [60,122,244]
+KERNEL_SIZE = 3
+SKIP_KERNEL_SIZE = 1
+POOL_SIZE = 8
+
+EPOCHS = 50
+
+TRAIN_BATCH_SIZE = 128
+TEST_BATCH_SIZE = 128
+AUGMENTATIONS = [
+    transforms.RandomCrop(32, padding=4),
+    transforms.RandomHorizontalFlip(),
+    transforms.ToTensor(),
+
+]
+NUM_WORKERS = 4
+RESUME = False
+CUTMIX_MIXUP = False
+
+SCHEDULER = optim.lr_scheduler.CosineAnnealingLR(OPTIMIZER, T_max=EPOCHS)
+OPTIMIZER = optim.SGD(model.parameters(), lr=LEARNING_RATE, momentum=0.9, weight_decay=5e-4, nesterov=True)
+------------------------------
+transforms.RandomErasing(p=0.5),
+
+Epoch 48
+Train Loss: 0.341 | Train Acc: 98.00% (48999/50000)
+Test Loss: 0.4242 | Accuracy: 94.75% (9475/10000)
+
+Vs
+No random erasing
+
+Epoch: 47
+Train Loss: 0.291 | Train Acc: 99.89% (49946/50000)
+Test Loss: 0.4517 | Accuracy: 94.05% (9405/10000)
+
+By only adjusting the random erasing, the test accuracy increased by almost 1%. Even though the test accuracy and loss improved, the train loss and accuracy decreased, which shows that random erasing was effective for generalization. I tried playing around with randomErasing at .9 and .1 as well, but they both performed less well than at .5. This augmentation had a significant positive effect on my final result and I used it for all my models.

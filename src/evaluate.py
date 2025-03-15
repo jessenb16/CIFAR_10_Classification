@@ -1,3 +1,19 @@
+"""
+This module evaluates a trained model on the CIFAR-10 hidden test dataset.
+Functions:
+    load_cifar_batch(file):
+        Loads a CIFAR-10 batch from a file.
+    load_hidden_test():
+        Loads and preprocesses the hidden test dataset.
+    load_model(file, device):
+        Loads a trained model from a file.
+    save_predictions(predictions, file):
+        Saves model predictions to a CSV file.
+    evaluate(model, testloader, device, batch_size=100):
+        Evaluates the model on the test dataset and returns predictions.
+    main(filename=None):
+        Main function to load data, load model(s), run inference, and save predictions.
+"""
 import os
 import pickle
 import torch

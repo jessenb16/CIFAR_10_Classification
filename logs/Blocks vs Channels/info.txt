@@ -1,0 +1,56 @@
+#Choose model parameters
+KERNEL_SIZE = 3
+SKIP_KERNEL_SIZE = 1
+POOL_SIZE = 8
+
+EPOCHS = 50
+
+TRAIN_BATCH_SIZE = 128
+TEST_BATCH_SIZE = 128
+AUGMENTATIONS = [
+    transforms.RandomCrop(32, padding=4),
+    transforms.RandomHorizontalFlip(),
+    transforms.ToTensor(),
+    transforms.RandomErasing(p=0.5),
+]
+NUM_WORKERS = 4
+
+RESUME = False
+CUTMIX_MIXUP = False
+------------------------
+Channels
+BLOCKS_PER_LAYER = [1,1,2]
+CHANNELS_PER_LAYER = [92,184,368]
+
+Epoch: 49
+Train Loss: 0.358 | Train Acc: 98.29% (49147/50000)
+Test Loss: 0.4495 | Accuracy: 94.70% (9470/10000)
+
+Vs
+Blocks
+BLOCKS_PER_LAYER = [3,3,4]
+CHANNELS_PER_LAYER = [60,122,244]
+
+Epoch 48
+Train Loss: 0.341 | Train Acc: 98.00% (48999/50000)
+Test Loss: 0.4242 | Accuracy: 94.75% (9475/10000)
+
+Vs
+Layers
+BLOCKS_PER_LAYER = [1,3,3,4]
+CHANNELS_PER_LAYER = [30,60,122,244]
+POOL_SIZE = 4
+
+Epoch: 49
+Train Loss: 0.374 | Train Acc: 96.56% (48279/50000)
+Test Loss: 0.4605 | Accuracy: 93.47% (9347/10000)
+
+
+
+Using 3 layers performed better than using 4 layers. In terms of optimizing for number of channels vs number of blocks, they performed very similarly. More blocks performed slightly better in this test, and that continued to be the case for longer training sessions.
+
+I decided to stick with 
+BLOCKS_PER_LAYER = [3,3,4]
+CHANNELS_PER_LAYER = [60,122,244]
+
+For the rest of the training session

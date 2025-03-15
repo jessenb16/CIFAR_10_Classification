@@ -1,0 +1,38 @@
+#Choose model parameters
+BLOCKS_PER_LAYER = [3,3,4]
+CHANNELS_PER_LAYER = [60,122,244]
+KERNEL_SIZE = 3
+SKIP_KERNEL_SIZE = 1
+POOL_SIZE = 8
+
+EPOCHS = 100
+
+TRAIN_BATCH_SIZE = 128
+TEST_BATCH_SIZE = 128
+AUGMENTATIONS = [
+    transforms.RandomCrop(32, padding=4),
+    transforms.RandomHorizontalFlip(),
+    transforms.ToTensor(),
+    transforms.RandomErasing(p=0.5),
+]
+NUM_WORKERS = 4
+RESUME = False
+CUTMIX_MIXUP = False
+
+OPTIMIZER = optim.SGD(model.parameters(), lr=LEARNING_RATE, momentum=0.9, weight_decay=5e-4, nesterov=True)
+
+------------------------------
+SCHEDULER = optim.lr_scheduler.CosineAnnealingLR(OPTIMIZER, T_max=EPOCHS)
+
+Epoch: 99
+Test Loss: 0.4106 | Accuracy: 95.75%% (6103/10000)
+
+
+Vs
+
+SCHEDULER = optim.lr_scheduler.MultiStepLR(optimizer, milestones=[30, 50, 65, 80,90], gamma=0.1)
+Epoch 80
+Test Loss: 0.4242 | Accuracy: 94.47% (9475/10000)
+
+
+MultistepLR was good for testing because I could control exactly when the learning rate changed, but if the T-max was set appropriately high enough for CosineAnnealing then it significantly out-performed multistep for longer training sessions. There I decided to go with CosineAnnealing.

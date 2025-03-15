@@ -1,3 +1,19 @@
+'''
+This script is used for training and evaluating a model on the CIFAR-10 dataset. It includes functions for managing 
+checkpoints, saving performance metrics, training, and testing the model. The main function orchestrates the training 
+process, including loading data, resuming from checkpoints, and saving the best model based on test accuracy.
+Functions:
+    manage_checkpoints(new_checkpoint, max_to_keep=5):
+    save_performance(epoch, train_accuracy, test_accuracy, train_loss, test_loss, lr, model_name):
+        Save training performance metrics to a CSV file.
+    save_model(model, epoch, accuracy, optimizer=None, scheduler=None, max_to_keep=5):
+        Save model with an informative filename and manage checkpoint retention.
+    train(model, trainloader, loss_func, optimizer, device, cutmix_mixup=False):
+        Train the model for one epoch.
+    test(model, testloader, loss_func, device):
+        Evaluate the model on the test dataset.
+    main(model, epochs, train_batch_size=128, test_batch_size=128, augmentations=None, optimizer=None, scheduler=None, smoothing=0.0, learning_rate=0.1, num_workers=2, resume=False, cutmix_mixup=False):
+        Main function to train and test the model.'''
 import torch
 import torch.optim as optim
 import torch.nn as nn
@@ -291,7 +307,7 @@ def main(model, epochs, train_batch_size=128, test_batch_size=128, augmentations
         best_accuracy, best_epoch = 0.0, 0
     else:
         best_epoch = start_epoch - 1  # Use the epoch from loaded checkpoint
-        
+
     for epoch in range(start_epoch, start_epoch + epochs + 1):
         print(f'Epoch: {epoch}')
         train_loss, train_accuracy = train(model, trainloader, loss_func, optimizer, device, cutmix_mixup)

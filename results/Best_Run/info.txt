@@ -1,0 +1,34 @@
+#Choose model parameters
+BLOCKS_PER_LAYER = [3,3,4]
+CHANNELS_PER_LAYER = [60,122,244]
+KERNEL_SIZE = 3
+SKIP_KERNEL_SIZE = 1
+POOL_SIZE = 8
+
+EPOCHS = 150
+
+TRAIN_BATCH_SIZE = 128
+TEST_BATCH_SIZE = 128
+AUGMENTATIONS = [
+    transforms.RandomCrop(32, padding=4),
+    transforms.RandomHorizontalFlip(),
+    transforms.ToTensor(),
+    transforms.RandomErasing(p=0.5),
+]
+NUM_WORKERS = 4
+
+RESUME = False
+CUTMIX_MIXUP = False
+
+criterion = nn.CrossEntropyLoss(label_smoothing=0.05)
+OPTIMIZER = optim.SGD(model.parameters(), lr=LEARNING_RATE, momentum=0.9, weight_decay=5e-4, nesterov=True)
+SCHEDULER = optim.lr_scheduler.CosineAnnealingLR(OPTIMIZER, T_max=EPOCHS)
+------------------------
+
+Epoch: 143
+Train Loss: 0.309 | Train Acc: 99.11%
+Test Loss: 0.382 | Accuracy: 96.69% 
+
+Number of parameters = 4996838
+Final Test Accuracy = 96.69% 
+

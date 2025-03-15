@@ -1,0 +1,40 @@
+#Choose model parameters
+BLOCKS_PER_LAYER = [3,3,4]
+CHANNELS_PER_LAYER = [60,122,244]
+KERNEL_SIZE = 3
+SKIP_KERNEL_SIZE = 1
+POOL_SIZE = 8
+
+EPOCHS = 50
+
+TRAIN_BATCH_SIZE = 128
+TEST_BATCH_SIZE = 128
+AUGMENTATIONS = [
+    transforms.RandomCrop(32, padding=4),
+    transforms.RandomHorizontalFlip(),
+    transforms.ToTensor(),
+    transforms.RandomErasing(p=0.5),
+]
+NUM_WORKERS = 4
+RESUME = False
+CUTMIX_MIXUP = False
+
+SCHEDULER = optim.lr_scheduler.CosineAnnealingLR(OPTIMIZER, T_max=EPOCHS)
+
+------------------------------
+OPTIMIZER = optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=1e-4)
+
+Epoch: 49
+Train Loss: 1.312 | Train Acc: 58.25% (29124/50000)
+Test Loss: 1.2477 | Accuracy: 61.03% (6103/10000)
+
+
+Vs
+
+OPTIMIZER = optim.SGD(model.parameters(), lr=LEARNING_RATE, momentum=0.9, weight_decay=5e-4, nesterov=True)
+
+Epoch 48
+Train Loss: 0.341 | Train Acc: 98.00% (48999/50000)
+Test Loss: 0.4242 | Accuracy: 94.75% (9475/10000)
+
+I chose SGD with momentum and Nesterov acceleration over Adam for training my ResNet on CIFAR-10 because it provided better generalization and higher accuracy. While Adam converged faster, it struggled with sharp minima, leading to poor test performance (61.03% accuracy). In contrast, SGD with momentum encouraged flatter minima, resulting in a 94.75% test accuracy. Additionally, SGD worked better with BatchNorm, used less memory, and allowed for fine-tuned learning rate scheduling. Since my ResNet had fewer than 5 million parameters, the controlled updates of SGD with a well-tuned learning rate ultimately led to superior performance over Adam.
