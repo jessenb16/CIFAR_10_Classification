@@ -2,9 +2,50 @@
 
 This repository contains a PyTorch implementation of a ResNet model for CIFAR-10 classification. The project is structured to facilitate training, evaluation, and inference on the CIFAR-10 dataset, with a focus on ease of use and customization.
 
+"""
+ResNet Implementation in PyTorch
 
+This implementation is based on the paper:
+[1] Kaiming He, Xiangyu Zhang, Shaoqing Ren, Jian Sun
+    Deep Residual Learning for Image Recognition. arXiv:1512.03385
+"""
 
+## Model Details
 
+The following table describes the best performing model configuration and results:
+
+| Category | Parameter | Value |
+|----------|-----------|-------|
+| **Model Architecture** | Blocks per layer | [3, 3, 4] |
+|  | Channels per layer | [60, 122, 244] |
+|  | Kernel size | 3 |
+|  | Skip kernel size | 1 |
+|  | Pool size | 8 |
+|  | Number of parameters | 4,996,838 |
+| **Training Setup** | Epochs | 150 |
+|  | Training batch size | 128 |
+|  | Testing batch size | 128 |
+|  | Data augmentation | RandomCrop, RandomHorizontalFlip, RandomErasing |
+|  | Number of workers | 4 |
+|  | CutMix/MixUp | Disabled |
+| **Optimization** | Loss function | CrossEntropyLoss with label smoothing (0.05) |
+|  | Optimizer | SGD with momentum (0.9) and weight decay (5e-4) |
+|  | Scheduler | CosineAnnealingLR |
+| **Results** | Final train loss | 0.309 |
+|  | Final train accuracy | 99.11% |
+|  | Final test loss | 0.382 |
+|  | Final test accuracy | 96.69% |
+
+## Directory Structure
+
+### `report`
+This directory contains a detailed PDF report documenting the methodology used in this project, including model architecture decisions, hyperparameter selection process, training strategies, and comprehensive experimental results with performance analysis and comparisons.
+
+### `logs`
+This directory contains csv files, graphs and explainations of the comparisons of hyperparameter configurations that led to the paramters used for this model.
+
+### `results`
+This directory contains the model that achieved the best training accuracy, as well as the logs of it's training and it's performance on the hidden dataset for the kaggle competition.
 
 ### `src/model.py`
 This file contains the implementation of the ResNet model and its building blocks. It defines the `BasicBlock` and `ResNet` classes, which are used to create the model architecture. The `create_model` function allows for easy instantiation of the model with customizable parameters:
